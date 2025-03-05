@@ -11,6 +11,7 @@ import os
 
 import app.databases as db
 import app.keyboards as kb
+from app.datebase.requests import set_user
 
 router = Router()
 
@@ -38,7 +39,7 @@ def validate_name(name):
 
 @router.message(CommandStart())
 async def cmd_start(message: Message, bot: Bot, state: FSMContext):
-    await db.start_db(message.from_user.id, message.from_user.full_name)
+    await set_user(message.from_user.id, message.from_user.full_name)
     if message.from_user.id != MY_ID:
         await bot.send_message(MY_ID, f'Пользователь {message.from_user.full_name} начал работу с ботом')
     await message.answer(f'Привет! {message.from_user.full_name}', reply_markup=kb.add_user_data)

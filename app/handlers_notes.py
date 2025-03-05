@@ -2,6 +2,7 @@ from aiogram import F, Router
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
+import app.datebase.requests as nt
 
 import app.databases as db
 import app.keyboards as kb
@@ -50,7 +51,7 @@ async def save_note(message: Message, state: FSMContext):
     if message.content_type == 'text':
         await state.update_data(fsm_note_text=message.text)
         data_state = await state.get_data()
-        await db.add_note(message.from_user.id, data_state['fsm_note_name'], data_state['fsm_note_text'],
+        await nt.add_note(message.from_user.id, data_state['fsm_note_name'], data_state['fsm_note_text'],
                           note_type='text')
         await state.clear()
         return await message.answer("Заметка сохранена", reply_markup=kb.note_list)
@@ -72,7 +73,7 @@ async def save_note(message: Message, state: FSMContext):
     caption_text = message.caption if message.caption else '----'
     await state.update_data(fsm_note_text=caption_text)
     data_state = await state.get_data()
-    await db.add_note(message.from_user.id, data_state['fsm_note_name'], data_state['fsm_note_text'],
+    await nt.add_note(message.from_user.id, data_state['fsm_note_name'], data_state['fsm_note_text'],
                       note_type=note_type, file_id=file_id)
     await message.answer("Заметка сохранена", reply_markup=kb.note_list)
     await state.clear()

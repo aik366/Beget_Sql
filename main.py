@@ -11,9 +11,11 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from datetime import datetime
 from app.func import open_birthday, open_birthday_reminder, all_func
 from app.databases import delta_db
+from app.datebase.models import async_main
 
 
 async def main():
+    await async_main()
     bot: Bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp: Dispatcher = Dispatcher()
 

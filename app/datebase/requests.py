@@ -2,12 +2,14 @@ from app.datebase.models import async_session, Note, User, Birthday
 from sqlalchemy import select, insert, update, delete
 from datetime import datetime
 
+my_time = datetime.now().strftime("%d.%m.%Y")
 
-async def set_user(tg_id):
+
+async def set_user(tg_id, full_name):
     async with async_session() as session:
         user = await session.scalar(select(User.tg_id).where(User.tg_id == tg_id))
         if not user:
-            session.add(User(tg_id=tg_id))
+            session.add(User(tg_id=tg_id, full_name=full_name, data=my_time))
             await session.commit()
 
 
@@ -26,7 +28,7 @@ async def set_user(tg_id):
 #         return await session.scalar(select(Item).where(Item.id == item_id))
 
 
-async def add_note(tg_id, note_name, note_text=None, note_type=None, file_id=None, note_date=datetime.now()):
+async def add_note(tg_id, note_name, note_text=None, note_type=None, file_id='----', note_date=my_time):
     async with async_session() as session:
         await session.execute(insert(Note).values(tg_id=tg_id, note_name=note_name, note_text=note_text,
                                                   note_type=note_type, file_id=file_id, note_date=note_date))
@@ -36,6 +38,12 @@ async def add_note(tg_id, note_name, note_text=None, note_type=None, file_id=Non
 async def get_notes():
     async with async_session() as session:
         return await session.scalars(select(Note))
+
+
+async def note_view(tg_id):
+    notes = await get_notes()
+    for note in notes:
+        print(note.tg_id, note.note_name, note.note_text, note.note_type, note.file_id, note.note_date)
 
 
 async def update_note_name(tg_id, new_name, note_name, note_text):
@@ -59,10 +67,9 @@ async def note_delete(tg_id, note_name, note_text):
         await session.commit()
 
 
-async def note_view():
-    notes = await get_notes()
-    for note in notes:
-        print(note.tg_id, note.note_name, note.note_text, note.note_type, note.file_id, note.note_date)
+async def get_birthday():
+    async with async_session() as session:
+        return await session.scalars(select(Birthday))
 
 
 async def add_birthday(tg_id, surname, name, date):
