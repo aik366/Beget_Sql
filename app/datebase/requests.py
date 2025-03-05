@@ -41,9 +41,9 @@ async def get_notes():
 
 
 async def note_view(tg_id):
-    notes = await get_notes()
-    for note in notes:
-        print(note.tg_id, note.note_name, note.note_text, note.note_type, note.file_id, note.note_date)
+    async with async_session() as session:
+        notes = await session.scalars(select(Note).where(Note.tg_id == tg_id))
+    return {note.id: (note.note_type, note.note_name, note.note_text, note.file_id) for note in notes}
 
 
 async def update_note_name(tg_id, new_name, note_name, note_text):

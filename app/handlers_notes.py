@@ -85,12 +85,12 @@ type_dict = {'text': '📝', 'photo': '🖼️', 'document': '📄', 'voice': '�
 @router_notes.message(F.text == '📋Мои заметки')
 async def my_note_text(message: Message, state: FSMContext):
     await state.clear()
-    notes_dict = await db.select_note(message.from_user.id)
+    notes_dict = await nt.note_view(message.from_user.id)
     if notes_dict:
         await state.update_data(note_list=notes_dict)
         in_kb = []
-        for key in notes_dict:
-            in_kb.append([InlineKeyboardButton(text=f'{type_dict[notes_dict[key][2]]}{notes_dict[key][0]}',
+        for key, value in notes_dict.items():
+            in_kb.append([InlineKeyboardButton(text=f'{type_dict[value[0]]}{value[1]}',
                                                callback_data=f'notes_{key}')])
         keyboard = InlineKeyboardMarkup(inline_keyboard=in_kb, resize_keyboard=True, one_time_keyboard=True)
         await message.answer("Ваши заметки", reply_markup=keyboard)
@@ -105,27 +105,27 @@ async def note_view(call: CallbackQuery, state: FSMContext):
     await state.set_state(Notes.note_all)
     data_state = await state.get_data()
     num = int(data_state['note_namber'])
-    if data_state['note_list'][num][2] == 'photo':
+    if data_state['note_list'][num][0] == 'photo':
         await call.message.answer_photo(data_state['note_list'][num][3], caption=f"{data_state['note_list'][num][1]}",
                                         reply_markup=kb.edit_note)
-    elif data_state['note_list'][num][2] == 'document':
+    elif data_state['note_list'][num][0] == 'document':
         await call.message.answer_document(data_state['note_list'][num][3],
                                            caption=f"{data_state['note_list'][num][1]}",
                                            reply_markup=kb.edit_note)
-    elif data_state['note_list'][num][2] == 'voice':
+    elif data_state['note_list'][num][0] == 'voice':
         await call.message.answer_voice(data_state['note_list'][num][3],
                                         caption=f"{data_state['note_list'][num][1]}",
                                         reply_markup=kb.edit_note)
-    elif data_state['note_list'][num][2] == 'audio':
+    elif data_state['note_list'][num][0] == 'audio':
         await call.message.answer_audio(data_state['note_list'][num][3],
                                         caption=f"{data_state['note_list'][num][1]}",
                                         reply_markup=kb.edit_note)
-    elif data_state['note_list'][num][2] == 'video':
+    elif data_state['note_list'][num][0] == 'video':
         await call.message.answer_video(data_state['note_list'][num][3],
                                         caption=f"{data_state['note_list'][num][1]}",
                                         reply_markup=kb.edit_note)
-    elif data_state['note_list'][num][2] == 'text':
-        await call.message.answer(f"{data_state['note_list'][num][1]}", reply_markup=kb.edit_note)
+    elif data_state['note_list'][num][0] == 'text':
+        await call.message.answer(f"{data_state['note_list'][num][2]}", reply_markup=kb.edit_note)
     await call.answer()
 
 
@@ -150,9 +150,9 @@ async def save_note(message: Message, state: FSMContext):
     await state.update_data(name_text=message.text)
     data_state = await state.get_data()
     num = int(data_state['note_namber'])
-    note_name = data_state['note_list'][num][0]
-    note_text = data_state['note_list'][num][1]
-    await db.update_note_name(message.from_user.id, data_state['name_text'], note_name, note_text)
+    note_name = data_state['note_list'][num][1]
+    note_text = data_state['note_list'][num][2]
+    await nt.update_note_name(message.from_user.id, data_state['name_text'], note_name, note_text)
     await message.answer("Имя заметки сохранена", reply_markup=kb.note_list)
     await state.clear()
 
@@ -178,9 +178,9 @@ async def note_new_text(message: Message, state: FSMContext):
     await state.update_data(new_text=message.text)
     data_state = await state.get_data()
     num = int(data_state['note_namber'])
-    note_name = data_state['note_list'][num][0]
-    note_text = data_state['note_list'][num][1]
-    await db.update_note_text(message.from_user.id, data_state['new_text'], note_name, note_text)
+    note_name = data_state['note_list'][num][1]
+    note_text = data_state['note_list'][num][2]
+    await nt.update_note_text(message.from_user.id, data_state['new_text'], note_name, note_text)
     await message.answer("Новый текст сохранена", reply_markup=kb.note_list)
     await state.clear()
 
@@ -198,13 +198,13 @@ async def note_add_text(message: Message, state: FSMContext):
     await state.update_data(add_text=message.text)
     data_state = await state.get_data()
     num = int(data_state['note_namber'])
-    note_name = data_state['note_list'][num][0]
-    note_text = data_state['note_list'][num][1]
+    note_name = data_state['note_list'][num][1]
+    note_text = data_state['note_list'][num][2]
     if note_text == '----':
         all_text = f"{data_state['add_text']}"
     else:
         all_text = f"{note_text}\n----\n{data_state['add_text']}"
-    await db.update_note_text(message.from_user.id, all_text, note_name, note_text)
+    await nt.update_note_text(message.from_user.id, all_text, note_name, note_text)
     await message.answer("Текст добавлен к заметке", reply_markup=kb.note_list)
     await state.clear()
 
