@@ -35,11 +35,6 @@ async def add_note(tg_id, note_name, note_text=None, note_type=None, file_id='--
         await session.commit()
 
 
-async def get_notes():
-    async with async_session() as session:
-        return await session.scalars(select(Note))
-
-
 async def note_view(tg_id):
     async with async_session() as session:
         notes = await session.scalars(select(Note).where(Note.tg_id == tg_id))

@@ -27,7 +27,7 @@ class Notes(StatesGroup):
 @router_notes.message(F.text == '📝Заметки')
 async def note_text(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer("Ты в меню добавления заметок.\nВыбери необходимое действие.", reply_markup=kb.note_list)
+    await message.answer("Это меню заметок", reply_markup=kb.note_list)
 
 
 @router_notes.message(F.text == '📝Добавить заметку')
@@ -70,6 +70,9 @@ async def save_note(message: Message, state: FSMContext):
     elif message.content_type == 'video':
         file_id = message.video.file_id
         note_type = 'video'
+    elif message.content_type == 'video_note':
+        file_id = message.video_note.file_id
+        note_type = 'video_note'
     caption_text = message.caption if message.caption else '----'
     await state.update_data(fsm_note_text=caption_text)
     data_state = await state.get_data()
@@ -79,7 +82,8 @@ async def save_note(message: Message, state: FSMContext):
     await state.clear()
 
 
-type_dict = {'text': '📝', 'photo': '🖼️', 'document': '📄', 'voice': '🎤', 'audio': '🎵', 'video': '🎞'}
+type_dict = {'text': '📝', 'photo': '🖼️', 'document': '📄', 'voice': '🎤', 'audio': '🎵', 'video': '📽️',
+             'video_note': '🎦'}
 
 
 @router_notes.message(F.text == '📋Мои заметки')
@@ -106,24 +110,28 @@ async def note_view(call: CallbackQuery, state: FSMContext):
     data_state = await state.get_data()
     num = int(data_state['note_namber'])
     if data_state['note_list'][num][0] == 'photo':
-        await call.message.answer_photo(data_state['note_list'][num][3], caption=f"{data_state['note_list'][num][1]}",
+        await call.message.answer_photo(data_state['note_list'][num][3], caption=f"{data_state['note_list'][num][2]}",
                                         reply_markup=kb.edit_note)
     elif data_state['note_list'][num][0] == 'document':
         await call.message.answer_document(data_state['note_list'][num][3],
-                                           caption=f"{data_state['note_list'][num][1]}",
+                                           caption=f"{data_state['note_list'][num][2]}",
                                            reply_markup=kb.edit_note)
     elif data_state['note_list'][num][0] == 'voice':
         await call.message.answer_voice(data_state['note_list'][num][3],
-                                        caption=f"{data_state['note_list'][num][1]}",
+                                        caption=f"{data_state['note_list'][num][2]}",
                                         reply_markup=kb.edit_note)
     elif data_state['note_list'][num][0] == 'audio':
         await call.message.answer_audio(data_state['note_list'][num][3],
-                                        caption=f"{data_state['note_list'][num][1]}",
+                                        caption=f"{data_state['note_list'][num][2]}",
                                         reply_markup=kb.edit_note)
     elif data_state['note_list'][num][0] == 'video':
         await call.message.answer_video(data_state['note_list'][num][3],
-                                        caption=f"{data_state['note_list'][num][1]}",
+                                        caption=f"{data_state['note_list'][num][2]}",
                                         reply_markup=kb.edit_note)
+    elif data_state['note_list'][num][0] == 'video_note':
+        await call.message.answer_video_note(data_state['note_list'][num][3],
+                                             caption=f"{data_state['note_list'][num][2]}",
+                                             reply_markup=kb.edit_note)
     elif data_state['note_list'][num][0] == 'text':
         await call.message.answer(f"{data_state['note_list'][num][2]}", reply_markup=kb.edit_note)
     await call.answer()
@@ -215,7 +223,8 @@ async def delete_note(call: CallbackQuery, state: FSMContext):
     await state.set_state(Notes.note_delete)
     data_state = await state.get_data()
     num = int(data_state['note_namber'])
-    await call.message.answer(f"{type_dict[data_state['note_list'][num][2]]}{data_state['note_list'][num][0]}",
+    print(data_state)
+    await call.message.answer(f"{type_dict[data_state['note_list'][num][0]]}{data_state['note_list'][num][1]}",
                               reply_markup=kb.note_delete)
     await call.answer()
 
@@ -225,7 +234,7 @@ async def delete_note_es(call: CallbackQuery, state: FSMContext):
     await state.update_data(note_delete=call.data)
     data_state = await state.get_data()
     num = int(data_state['note_namber'])
-    await db.note_delete(call.from_user.id, data_state['note_list'][num][0], data_state['note_list'][num][1])
+    await nt.note_delete(call.from_user.id, data_state['note_list'][num][1], data_state['note_list'][num][2])
     await call.message.answer("Заметка удалена!!!", reply_markup=kb.note_list)
     await call.answer()
     await state.clear()

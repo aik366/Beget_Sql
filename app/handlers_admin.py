@@ -1,6 +1,6 @@
 from aiogram import Bot, F, Router
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from config import MY_ID
 import os

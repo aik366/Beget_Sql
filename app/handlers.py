@@ -1,6 +1,6 @@
 from aiogram import F, Router, Bot
-from aiogram.types import Message, CallbackQuery, FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.filters import CommandStart, Command, Filter
+from aiogram.types import Message, CallbackQuery, FSInputFile
+from aiogram.filters import CommandStart, Command
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from config import MY_ID
@@ -428,13 +428,13 @@ async def add_user_reg(message: Message, state: FSMContext):
 
 @router.message(F.text == '33')
 async def file_open(message: Message):
-    with open("DATA/33.txt", "r") as file:
+    with open("../DATA/33.txt", "r") as file:
         f = file.read()
         await message.answer(f"{f}")
 
 
 @router.message(F.text == 'log')
 async def file_open_logo(message: Message):
-    with open("DATA/logs.log", "r") as file:
+    with open("../DATA/logs.log", "r") as file:
         f = file.read()[-3000:]
         await message.answer(f"{f}")
