@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 import asyncio
 import random
 
@@ -7,6 +7,36 @@ from app.databases import birthday, birthday_reminder, db_select_id
 import requests
 from bs4 import BeautifulSoup
 from config import API_KEY, MY_ID
+
+
+async def get_data(day: str, month: str):
+    day = int(day.lstrip('0'))
+    month = int(month.lstrip('0'))
+    teachers_day = date(datetime.now().year, month, day)
+    today = date.today()
+    if teachers_day >= today:
+        return (teachers_day - today).days
+    else:
+        teachers_day = date(datetime.now().year + 1, month, day)
+        return (teachers_day - today).days
+
+
+async def calculate_age(born):
+    day, month, year = map(int, born.split('.'))
+    born = datetime(year, month, day)
+    today = date.today()
+    return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+
+
+async def get_age_suffix(age: int) -> str:
+    if 11 <= age % 100 <= 14:
+        return "лет"
+    last_digit = age % 10
+    if last_digit == 1:
+        return "год"
+    if 2 <= last_digit <= 4:
+        return "года"
+    return "лет"
 
 
 async def open_birthday(bot: Bot):
