@@ -9,7 +9,6 @@ from datetime import datetime
 import app.func as fn
 import os
 
-import app.databases as db
 import app.keyboards as kb
 from app.datebase.requests import set_user
 import app.datebase.requests as nt
@@ -77,13 +76,13 @@ async def add_cencel(message: Message, state: FSMContext):
 
 @router.message(F.text == '👁️Просмотр данных')
 async def add_user_viev(message: Message, state: FSMContext):
-    await message.answer(f"{await db.db_select()}", reply_markup=kb.view_birthday)
+    await message.answer(f"{await nt.birthday_view()}", reply_markup=kb.view_birthday)
     await state.clear()
 
 
 @router.callback_query(F.data == 'birthday')
 async def add_user_viev_data(call: CallbackQuery, state: FSMContext):
-    await call.message.answer(f"{await db.select_data()}", reply_markup=kb.add_user_data)
+    await call.message.answer(f"{await nt.birthday_select()}", reply_markup=kb.add_user_data)
     await state.clear()
     await call.answer()
 
@@ -108,20 +107,20 @@ async def file_open_images(message: Message, state: FSMContext):
     await message.answer_photo(img)
     await state.clear()
 
-#KeyError: 'del_number'
+
 @router.message(F.text == '🗑️Удалить данные')
 async def delete_user(message: Message, state: FSMContext):
     await state.clear()
     await state.set_state(Form.del_number)
-    list_del = await nt.delete_select(message.from_user.id)
-    await state.set_state(Form.list_del)
-    output = "555"
-    # for key, value in list_del.items():
-    #     output += f"{key} - {value[0]} {value[1]} {value[2]}\n"
-    await state.update_data(del_len_list=len(list_del))
-    if list_del:
-        data_state = await state.get_data()
-        print(data_state)
+    dict_del = await nt.db_select(message.from_user.id)
+    await state.update_data(list_del=dict_del)
+    await state.update_data(del_len_list=len(dict_del))
+
+    output = ""
+    for key, value in dict_del.items():
+        output += f"{key} - {value[0]} {value[1]} {value[2]}\n"
+
+    if dict_del:
         await message.answer(f"{output}\nВведите порядковый номер\nДля удаления данных")
     else:
         await message.answer('У вас нет данных для удаления', reply_markup=kb.add_user_data)
@@ -132,10 +131,16 @@ async def delete_user(message: Message, state: FSMContext):
 async def view_user(message: Message, state: FSMContext):
     await state.clear()
     await state.set_state(Form.edit_number)
-    list_id = await db.delete_select(message.from_user.id)
-    await state.update_data(edit_len_list=len(list_id.split('\n')) - 1)
-    if list_id:
-        await message.answer(f"{list_id}\nВведите порядковый номер\nДля редактирования данных")
+    dict_del = await nt.db_select(message.from_user.id)
+    await state.update_data(list_del=dict_del)
+    await state.update_data(del_len_list=len(dict_del))
+
+    output = ""
+    for key, value in dict_del.items():
+        output += f"{key} - {value[0]} {value[1]} {value[2]}\n"
+
+    if dict_del:
+        await message.answer(f"{output}\nВведите порядковый номер\nДля редактирования данных")
     else:
         await message.answer('У вас нет данных для редактирования', reply_markup=kb.add_user_data)
         await state.clear()
@@ -168,34 +173,33 @@ async def open_wishes(message: Message, state: FSMContext):
 
 @router.message(Form.del_number)
 async def delete_user_reg(message: Message, state: FSMContext):
-    print("Получено сообщение")
-    # await state.update_data(del_number=message.text)
-    # data_state = await state.get_data()
-    # if not message.text.isdigit() or int(message.text) > data_state['del_len_list'] or int(message.text) < 1:
-    #     return await message.answer("Вы ввели неверное число\nПопробуйте ещё раз", reply_markup=kb.add_user_data)
-    # data_state = await state.get_data()
-    # surname, name, data = data_state['list_del'][message.text]
-    # await message.answer(f'{surname} {name} {data}', reply_markup=kb.delete)
+    await state.update_data(del_number=int(message.text))
+    data_state = await state.get_data()
+    if not message.text.isdigit() or int(message.text) > data_state['del_len_list'] or int(message.text) < 1:
+        return await message.answer("Вы ввели неверное число\nПопробуйте ещё раз", reply_markup=kb.add_user_data)
+    data_state = await state.get_data()
+    surname, name, data = data_state['list_del'][int(message.text)]
+    await message.answer(f'{surname} {name} {data}', reply_markup=kb.delete)
 
 
 @router.callback_query(F.data == 'delete')
 async def delete_user(call: CallbackQuery, state: FSMContext):
     data_state = await state.get_data()
-    await db.delete_to_number(call.from_user.id, int(data_state['del_number']))
-    await call.message.answer('Данные удалены', reply_markup=kb.note_list)
+    surname, name, data = data_state['list_del'][data_state['del_number']]
+    await nt.delete_one(call.from_user.id, surname, name, data)
+    await call.message.answer('Данные удалены', reply_markup=kb.add_user_data)
     await state.clear()
     await call.answer()
 
 
 @router.message(Form.edit_number)
 async def view_user_reg(message: Message, state: FSMContext):
-    await state.update_data(edit_number=message.text)
+    await state.update_data(edit_number=int(message.text))
     data_state = await state.get_data()
-    if not message.text.isdigit() or int(message.text) > data_state['edit_len_list'] or int(message.text) < 1:
-        return await message.answer("Вы ввели неверное число\nПопробуйте ещё раз", reply_markup=kb.note_list)
+    if not message.text.isdigit() or int(message.text) > data_state['del_len_list'] or int(message.text) < 1:
+        return await message.answer("Вы ввели неверное число\nПопробуйте ещё раз", reply_markup=kb.add_user_data)
     data_state = await state.get_data()
-    surname, name, data = await db.edit_to_number(message.from_user.id, int(data_state['edit_number']))
-    await state.update_data(edit_surname=surname, edit_name=name, edit_data=data)
+    surname, name, data = data_state['list_del'][int(message.text)]
     await message.answer(f'{surname} {name} {data}', reply_markup=kb.edit)
 
 
@@ -213,7 +217,8 @@ async def edit_user_reg(message: Message, state: FSMContext):
                                     reply_markup=kb.add_user_data)
     await state.update_data(surname_edit=message.text.capitalize())
     data_state = await state.get_data()
-    await db.update_surname(data_state['surname_edit'], data_state['edit_surname'], data_state['edit_name'])
+    surname, name, data = data_state['list_del'][data_state['edit_number']]
+    await nt.update_surname(message.from_user.id, surname, name, data_state['surname_edit'])
     await message.answer('Данные изменены', reply_markup=kb.add_user_data)
     await state.clear()
 
@@ -232,7 +237,8 @@ async def edit_user_reg(message: Message, state: FSMContext):
                                     reply_markup=kb.add_user_data)
     await state.update_data(name_edit=message.text.capitalize())
     data_state = await state.get_data()
-    await db.update_name(data_state['name_edit'], data_state['edit_surname'], data_state['edit_name'])
+    surname, name, data = data_state['list_del'][data_state['edit_number']]
+    await nt.update_name(message.from_user.id, surname, name, data_state['name_edit'])
     await message.answer('Данные изменены', reply_markup=kb.add_user_data)
     await state.clear()
 
@@ -252,7 +258,8 @@ async def edit_user_reg(message: Message, state: FSMContext):
         return await message.answer("Неверный формат даты! Используйте ДД.ММ.ГГГГ", reply_markup=kb.add_user_data)
     await state.update_data(data_edit=message.text)
     data_state = await state.get_data()
-    await db.update_data(data_state['data_edit'], data_state['edit_surname'], data_state['edit_name'])
+    surname, name, data = data_state['list_del'][data_state['edit_number']]
+    await nt.update_date(message.from_user.id, surname, name, data_state['data_edit'])
     await message.answer('Данные изменены', reply_markup=kb.add_user_data)
     await state.clear()
 

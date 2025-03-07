@@ -4,7 +4,6 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 import app.datebase.requests as nt
 
-import app.databases as db
 import app.keyboards as kb
 
 router_notes = Router()
@@ -238,15 +237,6 @@ async def delete_note_es(call: CallbackQuery, state: FSMContext):
     await call.message.answer("Заметка удалена!!!", reply_markup=kb.note_list)
     await call.answer()
     await state.clear()
-
-
-@router_notes.callback_query(F.data == 'delete')
-async def delete_user(call: CallbackQuery, state: FSMContext):
-    data_state = await state.get_data()
-    await db.delete_to_number(call.from_user.id, int(data_state['del_number']))
-    await call.message.answer('Данные удалены', reply_markup=kb.note_list)
-    await state.clear()
-    await call.answer()
 
 
 @router_notes.callback_query(F.data == 'cancel')

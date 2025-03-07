@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from config import MY_ID
 import os
 
-import app.databases as db
+import app.datebase.requests_admin as ad
 
 router_admin = Router()
 
@@ -32,7 +32,7 @@ async def delete_user_reg(message: Message, state: FSMContext):
     await state.update_data(del_user=message.text)
     data_state = await state.get_data()
     data_list = data_state['del_user'].split()
-    await db.admin_delete(data_list[0], data_list[1])
+    await ad.admin_delete(data_list[0], data_list[1])
     await message.answer('Данные удалены')
     await state.clear()
 
@@ -60,7 +60,7 @@ async def process_photo(message: Message, state: FSMContext):
 async def process_caption(message: Message, state: FSMContext, bot: Bot):
     await state.update_data(caption=message.text)
     full_data = await state.get_data()
-    for tg_id, name, data in await db.db_select_users():
+    for tg_id, name, data in await ad.db_select_id():
         try:
             await bot.send_photo(int(tg_id), full_data['photo_id'],
                                  caption=f"Привет {name}!\n{full_data['caption']}\nАдминистрация!!!")
@@ -79,7 +79,7 @@ async def cmd_admin_ad(message: Message, state: FSMContext):
 async def reg_admin_text_1(message: Message, bot: Bot, state: FSMContext):
     await state.update_data(text_1=message.text)
     data_state = await state.get_data()
-    for tg_id, name, data in await db.db_select_users():
+    for tg_id, name, data in await ad.db_select_id():
         try:
             await bot.send_message(int(tg_id), f"Привет {name}!\n{data_state['text_1']}\nАдминистрация!!!")
         except Exception as e:
@@ -97,7 +97,7 @@ async def cmd_admin_photo(message: Message, bot: Bot):
 @router_admin.message(F.text == 'Данные по ID')
 async def viev_id(message: Message, state: FSMContext):
     data_txt = ""
-    for tg_id, name, data in await db.db_select_users():
+    for tg_id, name, data in await ad.db_select_id():
         data_txt += f"{tg_id} {name} {data}\n"
     await message.answer(f"{data_txt}")
     await state.clear()
@@ -113,7 +113,7 @@ async def delete_id(message: Message, state: FSMContext):
 async def delete_id_reg(message: Message, state: FSMContext):
     await state.update_data(del_id=message.text)
     data_state = await state.get_data()
-    await db.db_delete_id(data_state['del_id'])
+    await ad.db_delete_id(data_state['del_id'])
     await message.answer('Данные по ID удалены')
     await state.clear()
 

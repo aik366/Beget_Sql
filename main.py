@@ -10,7 +10,7 @@ from app.handlers_admin import router_admin
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from datetime import datetime
 from app.func import open_birthday, open_birthday_reminder, all_func
-from app.databases import delta_db
+from app.datebase.requests import delta_db
 from app.datebase.models import async_main
 
 
